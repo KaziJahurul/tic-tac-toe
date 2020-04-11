@@ -1,7 +1,7 @@
 <template>
   <div class="tic-tac-toe">
 
-    <div class="board">
+    <div class="board" v-if="gameData.gameStart">
 
       <div
               class="board_row"
@@ -27,6 +27,18 @@
 
 
     <div class="status">
+
+      <div>
+        <button @click="clearClientCookie">Clear Cookie</button>
+      </div>
+
+      <div v-if="!clientPlayer" class="select-player">
+        <h2>Select Player:</h2>
+        <button v-if="!gameData.playerX" @click="setPlayer('x')">Player: x</button>
+        <button v-if="!gameData.playerY" @click="setPlayer('o')">Player: o</button>
+      </div>
+      <h2 v-else>You are playing as player: {{clientPlayer}}</h2>
+
       <div v-if="gameData.finished">
         <p v-if="gameData.draw">It's a draw! Stalemate!</p>
         <p v-else>Finished! {{gameData.next}} wins!</p>
@@ -50,19 +62,64 @@ export default {
                     ['', '', ''],
                     ['', '', '']
                 ],
-                next: 'x',
+                next: '',
                 finished: false,
                 draw: false,
+                playerX: '',
+                playerY: '',
+                gameStart: false,
             },
+            clientPlayer: '',
         }
     },
     created() {
       this.socket = io("http://localhost:3000");
-      console.log(this.gameData);
     },
     methods: {
+        clearClientCookie() {
+            this.eraseCookie('tictactoeplayer');
+            this.clientPlayer = '';
+            console.log('Cleared!');
+
+            this.gameData.rows = [
+                ['', '', ''],
+                ['', '', ''],
+                ['', '', '']
+            ];
+            this.gameData.finished = false;
+            this.gameData.draw = false;
+            this.gameData.next = '';
+            this.gameData.playerX = '';
+            this.gameData.playerY = '';
+            this.gameData.gameStart = false;
+
+            this.socket.emit("updateTapClick", this.gameData);
+        },
+        setPlayer(e) {
+            if(!this.getCookie('tictactoeplayer')){
+                // console.log(e);
+                this.setCookie('tictactoeplayer', e, 0.00347);
+                console.log(this.getCookie('tictactoeplayer'));
+                this.clientPlayer = e;
+
+                if(e === 'x'){
+                    this.gameData.playerX = e;
+                } else if(e === 'o') {
+                    this.gameData.playerY = e;
+                }
+                
+                if (this.gameData.playerX === 'x' && this.gameData.playerY === 'o') {
+                    this.gameData.gameStart = true;
+                    this.gameData.next = 'x';
+                }
+
+                this.socket.emit("updateTapClick", this.gameData);
+
+            }
+
+        },
         tapClick(e) {
-            if (!this.gameData.finished && e.target.innerText === '') {
+            if (!this.gameData.finished && e.target.innerText === '' && this.clientPlayer === this.gameData.next) {
                 let rows = this.gameData.rows;
                 rows[e.target.attributes['data-row'].value][e.target.attributes['data-column'].value] = this.gameData.next;
                 this.gameData.rows = rows.slice(0);
@@ -115,9 +172,40 @@ export default {
             ];
             this.gameData.finished = false;
             this.gameData.draw = false;
+            // this.gameData.next = 'x';
             this.nextPlayer();
+            // this.gameData.playerX = '';
+            // this.gameData.playerY = '';
+            // this.gameData.gameStart = false;
 
             this.socket.emit("updateTapClick", this.gameData);
+        },
+        refreshData() {
+
+        },
+        setCookie(cname, cvalue, exdays) {
+            let d = new Date();
+            d.setTime(d.getTime() + (exdays*24*60*60*1000));
+            let expires = "expires="+ d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        },
+        getCookie(cname) {
+            let name = cname + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for(let i = 0; i <ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) === 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        },
+        eraseCookie(name) {
+            document.cookie = name+'=; Max-Age=-99999999;';
         },
     },
     mounted() {
