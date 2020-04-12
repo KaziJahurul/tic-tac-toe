@@ -28,10 +28,6 @@
 
     <div class="status">
 
-      <div>
-        <button @click="clearClientCookie">Clear Cookie</button>
-      </div>
-
       <div v-if="!clientPlayer" class="select-player">
         <h2>Select Player:</h2>
         <button v-if="!gameData.playerX" @click="setPlayer('x')">Player: x</button>
@@ -76,30 +72,11 @@ export default {
       this.socket = io("http://localhost:3000");
     },
     methods: {
-        clearClientCookie() {
-            this.eraseCookie('tictactoeplayer');
-            this.clientPlayer = '';
-            console.log('Cleared!');
-
-            this.gameData.rows = [
-                ['', '', ''],
-                ['', '', ''],
-                ['', '', '']
-            ];
-            this.gameData.finished = false;
-            this.gameData.draw = false;
-            this.gameData.next = '';
-            this.gameData.playerX = '';
-            this.gameData.playerY = '';
-            this.gameData.gameStart = false;
-
-            this.socket.emit("updateTapClick", this.gameData);
-        },
         setPlayer(e) {
             if(!this.getCookie('tictactoeplayer')){
-                // console.log(e);
+
                 this.setCookie('tictactoeplayer', e, 0.00347);
-                console.log(this.getCookie('tictactoeplayer'));
+
                 this.clientPlayer = e;
 
                 if(e === 'x'){
@@ -165,6 +142,7 @@ export default {
             this.gameData.next = (this.gameData.next === 'x' ? 'o' : 'x');
         },
         restart() {
+
             this.gameData.rows = [
                 ['', '', ''],
                 ['', '', ''],
@@ -172,15 +150,29 @@ export default {
             ];
             this.gameData.finished = false;
             this.gameData.draw = false;
-            // this.gameData.next = 'x';
-            this.nextPlayer();
+            this.gameData.next = 'x';
+            this.gameData.playerX = '';
+            this.gameData.playerY = '';
+            this.gameData.gameStart = false;
+
+            this.socket.emit("refreshBoard", this.gameData);
+        },
+        clearClientCookie() {
+            this.eraseCookie('tictactoeplayer');
+            this.clientPlayer = '';
+            console.log('Cleared!');
+
+            // this.gameData.rows = [
+            //     ['', '', ''],
+            //     ['', '', ''],
+            //     ['', '', '']
+            // ];
+            // this.gameData.finished = false;
+            // this.gameData.draw = false;
+            // this.gameData.next = '';
             // this.gameData.playerX = '';
             // this.gameData.playerY = '';
             // this.gameData.gameStart = false;
-
-            this.socket.emit("updateTapClick", this.gameData);
-        },
-        refreshData() {
 
         },
         setCookie(cname, cvalue, exdays) {
@@ -212,7 +204,12 @@ export default {
       this.socket.on("gameData", data => {
          this.gameData = data;
       });
-    }
+      this.socket.on("refreshBoardAll", data => {
+          this.clearClientCookie();
+          this.gameData = data;
+          console.log('Cleared on emit...!');
+      });
+    },
 }
 </script>
 
