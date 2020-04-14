@@ -160,20 +160,6 @@ export default {
         clearClientCookie() {
             this.eraseCookie('tictactoeplayer');
             this.clientPlayer = '';
-            console.log('Cleared!');
-
-            // this.gameData.rows = [
-            //     ['', '', ''],
-            //     ['', '', ''],
-            //     ['', '', '']
-            // ];
-            // this.gameData.finished = false;
-            // this.gameData.draw = false;
-            // this.gameData.next = '';
-            // this.gameData.playerX = '';
-            // this.gameData.playerY = '';
-            // this.gameData.gameStart = false;
-
         },
         setCookie(cname, cvalue, exdays) {
             let d = new Date();
@@ -207,7 +193,6 @@ export default {
       this.socket.on("refreshBoardAll", data => {
           this.clearClientCookie();
           this.gameData = data;
-          console.log('Cleared on emit...!');
       });
     },
 }
