@@ -30,24 +30,26 @@
 
       <div v-if="!clientPlayer" class="select-player">
         <h2>Select Player:</h2>
-        <button v-if="!gameData.playerX" @click="setPlayer('x')">Player: x</button>
-        <button v-if="!gameData.playerY" @click="setPlayer('o')">Player: o</button>
+        <button v-if="!gameData.playerX" @click="setPlayer('x')">Player: X</button>
+        <button v-if="!gameData.playerY" @click="setPlayer('o')">Player: O</button>
       </div>
       <h2 v-else>You are playing as player: {{clientPlayer}}</h2>
 
-      <div v-if="gameData.finished">
+      <div class="game-finished" v-if="gameData.finished">
         <p v-if="gameData.draw">It's a draw! Stalemate!</p>
         <p v-else>Finished! {{gameData.next}} wins!</p>
-        <a v-on:click="restart">Restart</a>
+        <button v-on:click="restart">Restart</button>
       </div>
-      <span v-else>Next go: {{gameData.next}}</span>
+      <span class="next-player" v-else-if="gameData.next">Next go: {{gameData.next}}</span>
     </div> <!-- /.status -->
 
   </div>
 </template>
 
 <script>
-  import io from "socket.io-client";
+
+import io from "socket.io-client";
+
 export default {
     name: 'TicTacToe',
     data() {
@@ -66,10 +68,15 @@ export default {
                 gameStart: false,
             },
             clientPlayer: '',
+            winComboX: '',
+            winComboY: '',
         }
     },
     created() {
       this.socket = io("http://localhost:3000");
+      if(this.getCookie('tictactoeplayer')){
+          this.restart();
+      }
     },
     methods: {
         setPlayer(e) {
@@ -77,12 +84,12 @@ export default {
 
                 this.setCookie('tictactoeplayer', e, 0.00347);
 
-                this.clientPlayer = e;
+                this.clientPlayer = this.getCookie('tictactoeplayer');
 
                 if(e === 'x'){
-                    this.gameData.playerX = e;
+                    this.gameData.playerX = this.getCookie('tictactoeplayer');
                 } else if(e === 'o') {
-                    this.gameData.playerY = e;
+                    this.gameData.playerY = this.getCookie('tictactoeplayer');
                 }
                 
                 if (this.gameData.playerX === 'x' && this.gameData.playerY === 'o') {
@@ -196,22 +203,80 @@ export default {
       });
     },
 }
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-  .board_row {
-    clear: both;
+  button{
+    background: #fff;
+    color: #14bdac;
+    border: none;
+    display: inline-block;
+    cursor: pointer;
+    padding: 15px 30px;
+    margin: 20px;
+    font-size: 18px;
+    text-transform: uppercase;
   }
-  .board_col {
-    border: 1px solid #000;
-    width: 50px;
-    height: 35px;
-    float: left;
-    text-align: center;
-    padding-top: 15px;
+  .tic-tac-toe {
+    background-color: #14bdac;
+    width: 450px;
+    margin: 0 auto;
+    color: #fff;
+  }
+  .board{
+    padding: 20px;
+
+    .board_row {
+      display: flex;
+      border-bottom: 2px solid #fff;
+
+      &:last-child{
+        border-bottom: none;
+      }
+
+      .board_col {
+        width: 33.33%;
+        height: 135px;
+        text-align: center;
+        border-right: 2px solid #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 100px;
+        color: #fff;
+
+        &:last-child{
+          border-right: none;
+        }
+
+      }
+
+    }
+
   }
   .status {
-    clear: both;
+    padding: 30px 15px;
+
+    .select-player{
+
+      h2{
+        margin: 0;
+      }
+
+    }
+    .game-finished{
+      p{
+        font-weight: 700;
+        font-size: 20px;
+        margin: 10px 0 0;
+      }
+    }
+    .next-player{
+      font-size: 20px;
+      font-weight: 700;
+    }
+
   }
 </style>
