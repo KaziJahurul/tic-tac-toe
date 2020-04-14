@@ -41,6 +41,13 @@
         <button v-on:click="restart">Restart</button>
       </div>
       <span class="next-player" v-else-if="gameData.next">Next go: {{gameData.next}}</span>
+
+      <div v-if="gameData.probX && gameData.probY" class="probablity">
+        Odds of wining X: {{ gameData.probX.toFixed(2)}} %<br />
+        Odds of wining O: {{ gameData.probY.toFixed(2)}} %<br />
+        Odds of Stalemate: {{ gameData.probD.toFixed(2)}} %
+      </div>
+
     </div> <!-- /.status -->
 
   </div>
@@ -65,11 +72,13 @@ export default {
                 draw: false,
                 playerX: '',
                 playerY: '',
+                probX: '',
+                probY: '',
+                probD: '',
                 gameStart: false,
             },
             clientPlayer: '',
-            winComboX: '',
-            winComboY: '',
+            winCombo: '',
         }
     },
     created() {
@@ -113,6 +122,7 @@ export default {
                     this.gameData.draw = true;
                     this.gameData.finished = true;
                 } else {
+                    this.winProb();
                     this.nextPlayer();
                 }
 
@@ -135,6 +145,29 @@ export default {
                 (this.checkValuesPresent(this.gameData.rows[0]) &&
                     this.checkValuesPresent(this.gameData.rows[1]) &&
                     this.checkValuesPresent(this.gameData.rows[2]));
+        },
+        winProb() {
+            this.winCombo = [
+                this.gameData.rows[0],
+                this.gameData.rows[1],
+                this.gameData.rows[2],
+                [this.gameData.rows[0][0], this.gameData.rows[1][0], this.gameData.rows[2][0]],
+                [this.gameData.rows[0][1], this.gameData.rows[1][1], this.gameData.rows[2][1]],
+                [this.gameData.rows[0][2], this.gameData.rows[1][2], this.gameData.rows[2][2]],
+                [this.gameData.rows[0][0], this.gameData.rows[1][1], this.gameData.rows[2][2]],
+                [this.gameData.rows[0][2], this.gameData.rows[1][1], this.gameData.rows[2][0]]
+            ];
+
+            let winX = this.winCombo.filter(el => el.includes('x') === true);
+            let winXLeaveY = winX.filter(el => el.includes('o') !== true);
+            this.gameData.probX = ((winXLeaveY.length / winX.length) / 2) * 100;
+
+            let winY = this.winCombo.filter(el => el.includes('o') === true);
+            let winYLeaveX = winY.filter(el => el.includes('x') !== true);
+            this.gameData.probY = ((winYLeaveX.length / winY.length) / 2) * 100;
+
+            this.gameData.probD = 100 - (this.gameData.probY + this.gameData.probX);
+
         },
         checkValues(values) {
             return this.checkValuesPresent(values) && this.checkValuesMatch(values);
@@ -160,6 +193,9 @@ export default {
             this.gameData.next = 'x';
             this.gameData.playerX = '';
             this.gameData.playerY = '';
+            this.gameData.probX = '';
+            this.gameData.probY = '';
+            this.gameData.probD = '';
             this.gameData.gameStart = false;
 
             this.socket.emit("refreshBoard", this.gameData);
@@ -224,6 +260,9 @@ export default {
     width: 450px;
     margin: 0 auto;
     color: #fff;
+    @media (max-width: 600px){
+      width: 100%;
+    }
   }
   .board{
     padding: 20px;
@@ -278,5 +317,8 @@ export default {
       font-weight: 700;
     }
 
+  }
+  .probablity{
+    margin-top: 20px;
   }
 </style>
